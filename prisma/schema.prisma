@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("CASHIER") // "ADMIN" or "CASHIER"
+  createdAt DateTime @default(now())
+
+  sales     Sale[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sales       SaleItem[]
+  purchases   PurchaseItem[]
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  contact   String?
+  purchases Purchase[]
+}
+
+model Purchase {
+  id          Int      @id @default(autoincrement())
+  supplierId  Int
+  date        DateTime @default(now())
+  totalAmount Float
+
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  items       PurchaseItem[]
+}
+
+model PurchaseItem {
+  id         Int      @id @default(autoincrement())
+  purchaseId Int
+  productId  Int
+  quantity   Int
+  price      Float
+
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Sale {
+  id              Int      @id @default(autoincrement())
+  date            DateTime @default(now())
+  totalAmount     Float
+  userId          Int
+  customerName    String   @default("Umum")
+  customerPhone   String   @default("-")
+  customerAddress String   @default("-")
+  paymentMethod   String   @default("CASH")
+
+  user            User       @relation(fields: [userId], references: [id])
+  items           SaleItem[]
+}
+
+model SaleItem {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  quantity  Int
+  price     Float
+
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+}
